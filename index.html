@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="ISO-8859-1">
+        <title>Chess</title>
+    </head>
+    <body>
+        <canvas id="board" width="600" height="600" style="border-style:solid;"></canvas>
+        <script>
+			var c = document.getElementById("board");  
+			var boardSize = c.width;
+			var squareSize = boardSize/8;
+			var ctx = c.getContext("2d");
+			var pieces = new Array();
+			
+			var selectedX;
+			var selectedY;
+			
+			initializeBoard();
+			renderBoard();
+			
+			
+			c.addEventListener("click", function(event){
+				if(selectedX == null && selectedY == null){
+					selectedX = Math.floor(event.clientX/squareSize);
+					selectedY = Math.floor(event.clientY/squareSize);
+					if(findPieceInArray(selectedX,selectedY)==-1){
+						selectedX = null;
+						selectedY = null;
+					}
+				}else{
+					secondSelectionX = Math.floor(event.clientX/squareSize);
+					secondSelectionY = Math.floor(event.clientY/squareSize);
+					if(selectedX == secondSelectionX && selectedY == secondSelectionY){
+						selectedX = null;
+						selectedY = null;
+					}else if(validMove(selectedX, selectedY, secondSelectionX, secondSelectionY)){
+						makeMove(selectedX, selectedY, secondSelectionX, secondSelectionY);
+						selectedX = null;
+						selectedY = null;
+					}
+				}
+				renderBoard();
+			}, false);
+			
+			function initializeBoard(){
+				pieces.push(new GamePiece(0,0,"Rook",0));
+				pieces.push(new GamePiece(1,0,"Knight",0));
+				pieces.push(new GamePiece(2,0,"Bishop",0));
+				pieces.push(new GamePiece(3,0,"Queen",0));
+				pieces.push(new GamePiece(4,0,"King",0));
+				pieces.push(new GamePiece(5,0,"Bishop",0));
+				pieces.push(new GamePiece(6,0,"Knight",0));
+				pieces.push(new GamePiece(7,0,"Rook",0));
+				for(var i = 0; i < 8; i++){
+					pieces.push(new GamePiece(i,1,"Pawn",0));
+				}
+				
+				pieces.push(new GamePiece(0,7,"Rook",1));
+				pieces.push(new GamePiece(1,7,"Knight",1));
+				pieces.push(new GamePiece(2,7,"Bishop",1));
+				pieces.push(new GamePiece(3,7,"Queen",1));
+				pieces.push(new GamePiece(4,7,"King",1));
+				pieces.push(new GamePiece(5,7,"Bishop",1));
+				pieces.push(new GamePiece(6,7,"Knight",1));
+				pieces.push(new GamePiece(7,7,"Rook",1));
+				for(var i = 0; i < 8; i++){
+					pieces.push(new GamePiece(i,6,"Pawn",1));
+				}
+				
+				
+			}
+			
+			function renderBoard(){
+				drawBoard();
+				showSelected();
+				renderPieces(pieces);
+				detectPromotable();
+			}
+			
+			function drawBoard(){
+				for(var i = 0; i < 8; i++){
+					for(var j = 0; j < 8; j++){
+						if((i+j)%2 == 0){
+							drawSquare(i*squareSize,j*squareSize,squareSize,"Wheat");  
+						}
+						else{
+							drawSquare(i*squareSize,j*squareSize,squareSize,"SaddleBrown");           
+						}
+					}
+			
+				}
+			}
+			
+			function renderPieces(pieces){
+				for(var i in pieces){
+					if(pieces[i].notCaptured){
+						drawGamePiece(pieces[i]);
+					}
+				}
+			}
+			
+			function showSelected(){
+				if(selectedX != null && selectedY != null){
+					drawSquare(selectedX*squareSize,selectedY*squareSize,squareSize,"DarkGray");
+				}
+			}
+			
+			function drawGamePiece(piece){
+				var pieceString = getCharacter(piece.kind,piece.team);
+				var ctx = c.getContext("2d");
+				ctx.font = squareSize.toString() + "px Arial";
+				ctx.textAlign = "center";
+				ctx.fillStyle = 'Black';
+				ctx.textBaseline = "middle";
+				ctx.fillText(pieceString,squareSize * piece.x + squareSize/2,squareSize * piece.y + squareSize/2);
+			}
+			
+			function drawSquare(x,y,width,color){
+				ctx.beginPath(); 
+				ctx.rect(x,y,width,width);
+				ctx.fillStyle = color;
+				ctx.fill();
+			}
+			
+			function drawCircle(x,y,r,color){
+				ctx.beginPath();
+				ctx.arc(x,y,r,0,2*Math.PI);
+				ctx.fillStyle = color;
+				ctx.fill();
+			}
+			
+			function GamePiece(x,y,kind,team){
+				this.x = x;
+				this.y = y;
+				this.kind = kind;
+				this.team = team;
+				this.notCaptured = 1;
+			}
+			
+			GamePiece.prototype.capture = function(){
+				this.notCaptured = 0;
+				this.x = -1;
+				this.y = -1;
+			}
+			
+			function findPieceInArray(x,y){
+				for(var i in pieces){
+					if(pieces[i].x == x && pieces[i].y ==y){
+						return i;
+					}
+				}
+				return -1;
+			}
+			
+			function validMove(selectedX, selectedY, secondSelectionX, secondSelectionY){
+				return true;
+			}
+			
+			function makeMove(selectedX, selectedY, secondSelectionX, secondSelectionY){
+				if(findPieceInArray(secondSelectionX,secondSelectionY) != -1){
+					pieces[findPieceInArray(secondSelectionX,secondSelectionY)].capture();
+				}
+				var movingPiece = pieces[findPieceInArray(selectedX,selectedY)];
+				movingPiece.x = secondSelectionX;
+				movingPiece.y = secondSelectionY;
+			}
+			
+			function getCharacter(kind, team){
+				if(team ==0){
+					if(kind == "King") return String.fromCharCode(9812);
+					if(kind == "Queen") return String.fromCharCode(9813);
+					if(kind == "Rook") return String.fromCharCode(9814);
+					if(kind == "Bishop") return String.fromCharCode(9815);
+					if(kind == "Knight") return String.fromCharCode(9816);
+					if(kind == "Pawn") return String.fromCharCode(9817);
+				}
+				if(team = 1){
+					if(kind == "King") return String.fromCharCode(9818);
+					if(kind == "Queen") return String.fromCharCode(9819);
+					if(kind == "Rook") return String.fromCharCode(9820);
+					if(kind == "Bishop") return String.fromCharCode(9821);
+					if(kind == "Knight") return String.fromCharCode(9822);
+					if(kind == "Pawn") return String.fromCharCode(9823);
+					
+				}
+			}
+			
+			function detectPromotable(){
+				for(var i in pieces){
+					if((pieces[i].y == 0 || pieces[i].y == 7) && pieces[i].kind == "Pawn"){
+						var validSelectionMade = false;
+						var choice;
+						while(!validSelectionMade){
+							choice =  prompt("Promote to What? (Queen,Knight,Rook,Bishop)","Queen");
+							choice = choice.toLowerCase();
+							choice = choice.charAt(0).toUpperCase() + choice.slice(1);
+							if(choice == "Pawn" || choice == "Rook" || choice == "Knight" || choice =="Bishop" || choice == "Queen" || choice == "King"){
+								validSelectionMade = true;
+							}
+						}
+						pieces[i].kind = choice;
+						renderBoard();
+						renderPieces();
+					}
+				}
+			}
+			
+        </script>
+    </body>
+</html>
+
+
+
